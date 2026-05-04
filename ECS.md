@@ -8,4 +8,4 @@
 
 ## Amazon ECR (Elastic Container Registry)
 1. Stores the Docker Images.
-2. We can Images from here to ECS/EKS Whenever we need .
+2. We can Images from here to ECS/EKS Whenever we need.
