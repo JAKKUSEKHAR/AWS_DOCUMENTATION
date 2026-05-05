@@ -14,10 +14,11 @@
 
 ## Amazon EKS 
 1. Kubernetes Service by AWS.
+2. used to deploy, scale the containers. More Complex but More Flexiable.
 
 
 
-## Finds 
+## -----   ------
 1. EKS is more Flexiable then ECS
 2. ECS is very easy to use and more secure than EKS
 3. Task Definition is a json file where we keep the information about the containers and images, CPU and Memory need for the containers to run.
@@ -26,3 +27,6 @@ aws ecs register-task-definition \
   --cli-input-json file://task-definition.json
 
 ```
+4. Task Definition Defines how the Containers run.
+5. Cluster is a place where the containers runs. 
+6. The Service attach the Task Definition to the cluster and manages the containers.
