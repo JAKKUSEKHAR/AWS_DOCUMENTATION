@@ -68,22 +68,22 @@ Task Definiton
 
 
 1. Developer writes application code
-        ↓
+        
 
 2. Docker Image is built
-        ↓
+        
 
 3. Docker Image is pushed to ECR
-        ↓
+        
 
 4. ECS Service uses Task Definition
-        ↓
+        
 
 5. Task Definition contains ECR Image URL
-        ↓
+        
 
 6. ECS pulls the Docker Image from ECR
-        ↓
+        
 
 7. ECS creates and runs Containers
    inside the Cluster
