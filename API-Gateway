@@ -1,0 +1,224 @@
+User
+ ↓
+Route53
+ ↓
+CloudFront
+ ↓
+S3 (Frontend)
+
+Frontend JS calls:
+api.housie.us
+ ↓
+API Gateway
+ ↓
+ALB
+ ↓
+ECS Backend Services
+
+## Ponits to Remember
+
+If we keep the ALB public:
+
+Internet → ALB
+
+still works directly.
+
+but users can bypass:
+
+API Gateway throttling
+API Gateway auth
+API Gateway logging
+
+That defeats many reasons for adding API Gateway.
+
+
+
+
+
+
+                    ┌─────────────────────┐
+                    │     CloudFront      │
+                    └─────────┬───────────┘
+                              │
+          ┌───────────────────┴───────────────────┐
+          │                                       │
+          │                                       │
+          ▼                                       ▼
+
+Frontend Requests                         API Requests
+(/* routes)                               (/api/*)
+
+          │                                       │
+          ▼                                       ▼
+
+Public Frontend ALB                      API Gateway
+          │                                       │
+          ▼                                       ▼
+
+Next.js ECS Service                      VPC Link
+                                                  │
+                                                  ▼
+
+                                          Internal Backend ALB
+                                                  │
+                                                  ▼
+
+                                         Spring Boot ECS Services
+
+
+--------------------------------------------------------------------------------------------------------------
+
+
+*. The frontend container directly can make the calls to backend services via internal ALB. 
+
+
+--------------------------------------------------------------------------------------------------------------
+
+
+you can still add API Gateway for:
+
+throttling
+API keys
+JWT auth
+request validation
+usage plans
+API analytics
+rate limiting
+API versioning
+monetization
+SDK generation
+
+
+
+
+## if we keep the alb in the public 
+
+API Gateway policies can be bypassed
+throttling bypassed
+API auth layers bypassed
+usage tracking bypassed
+
+
+## When the api gateway Becomes Use and Powerful 
+--> When the Backend ALB Becomes Internal
+
+then: 
+
+Internet
+   ↓
+CloudFront
+   ↓
+API Gateway
+   ↓
+VPC Link
+   ↓
+Internal ALB
+   ↓
+ECS
+
+
+
+
+
+Practical recommendation for housie.us
+
+For a Housie platform:
+
+CloudFront + WAF + ALB + ECS is already strong
+Keep backend ECS private
+Keep DB private
+Use SG chaining properly
+Add WAF/rate limiting at CloudFront
+
+Then later, if:
+
+mobile apps grow
+public APIs emerge
+partner integrations happen
+API governance becomes messy
+
+THEN introduce API Gateway.
+
+Otherwise you risk adding:
+
+VPC Links
+extra latency
+more costs
+harder debugging
+another failure layer
+
+without getting proportional value.
+
+
+
+
+## When API Gateway becomes useful for microservices
+
+Not because of API count.
+
+Instead because of:
+
+centralized auth
+per-client throttling
+API lifecycle management
+version governance
+request transformation
+public partner APIs
+analytics
+SDK generation
+
+
+
+##Mobile APIs face:  (So we need API gateway)
+
+token abuse
+aggressive retries
+app version fragmentation
+public internet exposure
+reverse engineering
+bot traffic
+
+
+
+==============================================================================================================
+
+## The Bridge Between Frontend and Backend
+
+1. The Network Bridge (Security Groups)
+Your Next.js Server Components are running inside your housie-cluster-dev ECS tasks. To let them talk to the backend, you must configure the Internal ALB Security Group to accept inbound HTTP/HTTPS traffic where the source is your Next.js Security Group (web-app-sg). This creates a secure, private tunnel between the two layers.
+
+2. The Internal Address (Route 53)
+When the Next.js Server Component fires a fetch() request, it needs to know where to send it. Instead of sending it out to the public internet (api.housie.us), it sends it to the Internal ALB. You map a clean internal domain name (like api.internal.housie.local) to your Internal ALB using an Amazon Route 53 Private Hosted Zone.
+
+
+## Differnet Calls from Next.js Server Components
+
+. Direct Browser → Backend API Calls
+In Next.js, these are calls made inside useEffect or via libraries like SWR or TanStack Query.
+
+User Interactions: Clicking "Favorite" on a listing or "Contact Agent." The browser talks directly to our API.
+
+Client-Side Navigation: If you are already on the site and click a new link, Next.js often fetches just the JSON data from the browser to update the page without a full reload.
+
+Polling/WebSockets: Checking for new "Price Dropped" alerts while the user has the tab open.
+
+Auth Checks: Validating a session token directly against an auth provider (like Firebase or Auth0) from the client side.
+
+2. Frontend Container → Backend (Server-Side)
+These calls happen inside our Node.js container before the user sees anything. This is the "hidden" traffic.
+
+A. Server Components & getServerSideProps
+When a user hits a URL (e.g., [housie.com/homes/123-main-st](https://housie.com/homes/123-main-st)), the Frontend Container wakes up and calls our Backend API (or Database) to get the house details.
+
+Why: So the page arrives in the browser fully populated with data. This is essential for SEO (Google needs to see the house price) and performance (no "loading spinners").
+
+B. Next.js API Routes (/pages/api or /app/api)
+If our frontend container has its own API routes, it acts as a Proxy.
+
+The Flow: Browser → Frontend Container (API Route) → Actual Backend.
+
+Why:
+
+Hiding Secrets: we need to call a maps API (like Google Maps) but don't want our private API key visible in the browser.
+
+CORS Bypass: If our backend is on a different domain and has strict security, the Frontend Container can talk to it more easily than a browser can.

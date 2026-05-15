@@ -39,7 +39,7 @@ aws ecs register-task-definition \
 
 
 ### Actual Flow
-You build a Docker image.
+We build a Docker image.
 Push it to Amazon Web Services ECR.
 Create a Task Definition
 tells ECS:
